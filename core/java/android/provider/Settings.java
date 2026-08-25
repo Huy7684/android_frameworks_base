@@ -13647,6 +13647,14 @@ public final class Settings {
         public static final String KEYBOX_DATA = "keybox_data";
 
         /**
+         * Comma separated list of packages that should receive certified
+         * Play Integrity props (e.g. banking apps that detect custom ROMs).
+         * @hide
+         */
+        @Readable
+        public static final String SPOOFED_APPS = "spoofed_apps";
+
+        /**
          * Network traffic indicator mode
          * 0 = Don't show network traffic indicator
          * 1 = Display up-stream traffic only

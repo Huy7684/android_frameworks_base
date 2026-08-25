@@ -153,12 +153,17 @@ public class PropImitationHooks {
          * Set custom model for Netflix
          * Set Pixel XL for Google Photos
          */
+        final boolean isUserSelectedApp = !android.os.Process.isIsolated()
+                && isUserSelectedSpoofApp(context, packageName);
         if (sIsGms || sIsFinsky) {
             if (!android.os.Process.isIsolated()) {
-                setPlayIntegrityProps(context);
+                setPlayIntegrityProps(context, true);
             } else {
                 dlog("Not setting Play Integrity props in isolated process");
             }
+        } else if (isUserSelectedApp) {
+            dlog("Setting Play Integrity props for user-selected app: " + packageName);
+            setPlayIntegrityProps(context, false);
         } else if (!sStockFp.isEmpty() && packageName.equals(PACKAGE_ARCORE)) {
             dlog("Setting stock fingerprint for: " + packageName);
             setPropValue("FINGERPRINT", sStockFp);
@@ -189,7 +194,25 @@ public class PropImitationHooks {
         }
     }
 
-    private static void setPlayIntegrityProps(Context context) {
+    private static boolean isUserSelectedSpoofApp(Context context, String packageName) {
+        try {
+            final String raw = Settings.Secure.getString(context.getContentResolver(),
+                    Settings.Secure.SPOOFED_APPS);
+            if (TextUtils.isEmpty(raw)) {
+                return false;
+            }
+            for (String pkg : raw.split(",")) {
+                if (packageName.equals(pkg.trim())) {
+                    return true;
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Unable to read user-selected spoof apps", t);
+        }
+        return false;
+    }
+
+    private static void setPlayIntegrityProps(Context context, boolean isGmsOrFinsky) {
         if (sDisableGmsProps) {
             dlog("GMS prop imitation is disabled by user");
             return;
@@ -231,6 +254,12 @@ public class PropImitationHooks {
             return;
         }
 
+        if (!isGmsOrFinsky) {
+            dlog("Spoofing build for user-selected app");
+            setCertifiedProps();
+            return;
+        }
+
         final boolean was = isGmsAddAccountActivityOnTop();
         final TaskStackListener taskStackListener = new TaskStackListener() {
             @Override
@@ -250,7 +279,6 @@ public class PropImitationHooks {
         } else {
             dlog("Skip spoofing build for GMS / Finsky, because GmsAddAccountActivityOnTop");
         }
-
         try {
             ActivityTaskManager.getService().registerTaskStackListener(taskStackListener);
         } catch (Exception e) {
