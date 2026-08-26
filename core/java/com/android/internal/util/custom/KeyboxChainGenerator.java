@@ -173,6 +173,7 @@ public final class KeyboxChainGenerator {
             var AkeySize = new ASN1Integer(params.keySize);
             var Adigest = new DERSet(fromIntList(params.digest));
             var AecCurve = new ASN1Integer(params.ecCurve);
+            var Aorigin = new ASN1Integer(params.origin);
             var AnoAuthRequired = DERNull.INSTANCE;
 
             // To be loaded
